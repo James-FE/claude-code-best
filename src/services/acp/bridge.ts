@@ -28,6 +28,7 @@ import { toDisplayPath, markdownEscape } from './utils.js'
 
 // ── ToolUseCache ──────────────────────────────────────────────────
 
+/** Maps tool_use_id → tool metadata for tracked inflight tool calls. */
 export type ToolUseCache = {
   [key: string]: {
     type: 'tool_use' | 'server_tool_use' | 'mcp_tool_use'
@@ -39,6 +40,7 @@ export type ToolUseCache = {
 
 // ── Session usage tracking ────────────────────────────────────────
 
+/** Accumulated token usage across a session, updated per result message. */
 export type SessionUsage = {
   inputTokens: number
   outputTokens: number
@@ -46,6 +48,7 @@ export type SessionUsage = {
   cachedWriteTokens: number
 }
 
+/** Token usage reported in SDK result messages. */
 type BridgeUsage = {
   input_tokens?: number
   output_tokens?: number
@@ -53,6 +56,7 @@ type BridgeUsage = {
   cache_creation_input_tokens?: number
 }
 
+/** system-init, compact_boundary, status, api_retry, local_command_output messages. */
 type BridgeSystemMessage = {
   type: 'system'
   subtype?: string
@@ -66,6 +70,7 @@ type BridgeSystemMessage = {
   [key: string]: unknown
 }
 
+/** Turn completion message: success with usage, or error with stop_reason. */
 type BridgeResultMessage = {
   type: 'result'
   subtype?: string
@@ -84,6 +89,7 @@ type BridgeResultMessage = {
   [key: string]: unknown
 }
 
+/** Full assistant response message after the turn completes. */
 type BridgeAssistantMessage = {
   type: 'assistant'
   message?: {
@@ -102,6 +108,7 @@ type BridgeAssistantMessage = {
   [key: string]: unknown
 }
 
+/** Real-time streaming event (aka partial_assistant in the SDK schema). */
 type BridgeStreamEventMessage = {
   type: 'stream_event'
   event?: { type?: string; [key: string]: unknown }
@@ -112,6 +119,7 @@ type BridgeStreamEventMessage = {
   [key: string]: unknown
 }
 
+/** User prompt message (may include tool_use_result from prior turns). */
 type BridgeUserMessage = {
   type: 'user'
   message?: Record<string, unknown>
@@ -122,6 +130,7 @@ type BridgeUserMessage = {
   [key: string]: unknown
 }
 
+/** Subagent or hook progress notification (internal, not an SDK message member). */
 type BridgeProgressMessage = {
   type: 'progress'
   data?: {
@@ -132,6 +141,7 @@ type BridgeProgressMessage = {
   [key: string]: unknown
 }
 
+/** Summary of tool calls made during a turn. */
 type BridgeToolUseSummaryMessage = {
   type: 'tool_use_summary'
   summary?: string
@@ -141,17 +151,20 @@ type BridgeToolUseSummaryMessage = {
   [key: string]: unknown
 }
 
+/** File attachment metadata (internal, not an SDK message member). */
 type BridgeAttachmentMessage = {
   type: 'attachment'
   [key: string]: unknown
 }
 
+/** Compaction boundary marker (type is 'compact_boundary', not 'system'). */
 type BridgeCompactBoundaryMessage = {
   type: 'compact_boundary'
   compact_metadata?: Record<string, unknown>
   [key: string]: unknown
 }
 
+/** ACP bridge local discriminated union — covers all message shapes consumed by the forwarding loop. */
 type BridgeSDKMessage =
   | BridgeSystemMessage
   | BridgeResultMessage
@@ -167,6 +180,7 @@ const logger: { debug: (...args: unknown[]) => void } = console
 
 // ── Tool info conversion ──────────────────────────────────────────
 
+/** Sanitised tool metadata sent to ACP client for tool_call notifications. */
 interface ToolInfo {
   title: string
   kind: ToolKind
@@ -638,6 +652,7 @@ function toAcpContentBlock(
 
 // ── Edit tool response → diff ──────────────────────────────────────
 
+/** Context lines and diff metadata for one hunk of an Edit tool response. */
 interface EditToolResponseHunk {
   oldStart: number
   oldLines: number
@@ -646,6 +661,7 @@ interface EditToolResponseHunk {
   lines: string[]
 }
 
+/** Result block for Edit/Write tool responses containing hunks and optional file stats. */
 interface EditToolResponse {
   filePath?: string
   structuredPatch?: EditToolResponseHunk[]
